@@ -1,0 +1,466 @@
+package application;
+
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+
+import java.io.IOException;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.stage.Stage;
+
+public class SceneController {
+	
+	//private fields
+	@FXML
+	private Stage stage;
+	@FXML
+	private Scene scene;
+	@FXML
+	private Parent root;
+	@FXML
+	private CheckBox diagnosticSelect;
+	@FXML
+	private CheckBox cleaningSelect;
+	@FXML
+	private CheckBox brakesSelect;
+	@FXML
+	private CheckBox tiresSelect;
+	@FXML
+	private CheckBox oilSelect;
+	@FXML
+	private TextField nameText;
+	@FXML
+	private TextField emailText;
+	@FXML
+	private TextField addressText;
+	@FXML
+	private TextArea exText;
+	@FXML
+	private MenuButton dateSelectionButton;
+	@FXML
+	private TextField ccNumText;
+	@FXML
+	private TextField ccNameText;
+	@FXML
+	private TextField ccCVVText;
+	@FXML
+	private TextField ccTypeText;
+	@FXML
+	private TextField ccExpiryDateText;
+	@FXML
+	private TextField ccAddressText;
+	@FXML
+	private TextArea orderText;
+	@FXML
+	private TextArea invoiceText;
+	@FXML
+	private Label choosingWorkError;
+	@FXML
+	private TextField checkOrderNumText;
+	@FXML
+	private TextField checkOrderEmailText;
+	@FXML
+	private Label confirmLabel;
+	@FXML
+	private Button closeButton;
+	
+	//Database connection info
+	private static String url = "jdbc:mysql://localhost:3306/mysql";
+	private static String user = "root";
+	private static String pass = "";
+	
+	//Top Bar Buttons
+	public void exitButton(ActionEvent event) throws IOException {
+		Stage stage = (Stage) closeButton.getScene().getWindow();
+		stage.close();
+	}
+	public void homeButton(ActionEvent event) throws IOException {
+		Parent root = FXMLLoader.load(getClass().getResource("MainScene.fxml"));
+		stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+		scene = new Scene(root);
+		stage.setScene(scene);
+		stage.show();
+	}
+	public void checkOrderButton(ActionEvent event) throws IOException {
+		Parent root = FXMLLoader.load(getClass().getResource("CheckOrder.fxml"));
+		stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+		scene = new Scene(root);
+		stage.setScene(scene);
+		stage.show();
+	}
+	public void aboutUsButton(ActionEvent event) throws IOException {
+		Parent root = FXMLLoader.load(getClass().getResource("AboutUs.fxml"));
+		stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+		scene = new Scene(root);
+		stage.setScene(scene);
+		stage.show();
+	}
+	public void orderButton(ActionEvent event) throws IOException {
+		Parent root = FXMLLoader.load(getClass().getResource("VehicleSelect.fxml"));
+		stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+		scene = new Scene(root);
+		stage.setScene(scene);
+		stage.show();
+	}
+	
+	//VehicleType page
+	public void buttonVanPress(ActionEvent event) throws IOException {
+		Vehicle.setVan();
+		Service.selectAllFalse();
+		Parent root = FXMLLoader.load(getClass().getResource("ChoosingWork.fxml"));
+		stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+		scene = new Scene(root);
+		stage.setScene(scene);
+		stage.show();
+	}
+	public void buttonCarPress(ActionEvent event) throws IOException {
+		Vehicle.setCar();
+		Service.selectAllFalse();
+		Parent root = FXMLLoader.load(getClass().getResource("ChoosingWork.fxml"));
+		stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+		scene = new Scene(root);
+		stage.setScene(scene);
+		stage.show();
+	}
+	public void buttonTruckPress(ActionEvent event) throws IOException {
+		Vehicle.setTruck();
+		Service.selectAllFalse();
+		Parent root = FXMLLoader.load(getClass().getResource("ChoosingWork.fxml"));
+		stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+		scene = new Scene(root);
+		stage.setScene(scene);
+		stage.show();
+	}
+	public void vehicleBack(ActionEvent event) throws IOException {
+		Parent root = FXMLLoader.load(getClass().getResource("MainScene.fxml"));
+		stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+		scene = new Scene(root);
+		stage.setScene(scene);
+		stage.show();
+	}
+	
+	//ChoosingWork page
+	public void choosingWorkBack(ActionEvent event) throws IOException {
+		Parent root = FXMLLoader.load(getClass().getResource("VehicleSelect.fxml"));
+		stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+		scene = new Scene(root);
+		stage.setScene(scene);
+		stage.show();
+	}
+	public void choosingWorkNext(ActionEvent event) throws IOException, SQLException {
+		
+		//Checking if stock is available
+		Connection con = DriverManager.getConnection(url, user, pass);
+		Statement statementBrakes = con.createStatement();
+		Statement statementOil = con.createStatement();
+		Statement statementTires = con.createStatement();
+		ResultSet resultBrakes = statementBrakes.executeQuery("SELECT QUANTITY FROM inventory WHERE ITEM = '"
+														    + Vehicle.getVehicleType() + " Brakes';");
+		ResultSet resultOil = statementOil.executeQuery("SELECT QUANTITY FROM inventory WHERE ITEM = '"
+			    									    + Vehicle.getVehicleType() + " Oil';");
+		ResultSet resultTires = statementTires.executeQuery("SELECT QUANTITY FROM inventory WHERE ITEM = '"
+			    											+ Vehicle.getVehicleType() + " Tires';");
+		resultBrakes.next();
+		resultOil.next();
+		resultTires.next();
+		
+		boolean check = true;
+		choosingWorkError.setText("");
+		
+		if (Service.getOilService() == true && resultOil.getInt(1) <= 0) {
+			choosingWorkError.setText(choosingWorkError.getText() + "We are out of stock for " + Vehicle.getVehicleType()
+									  + " oil. We apologize for the inconvenience\n");
+			check = false;
+		}
+		if(Service.getBrakesService() == true && resultBrakes.getInt(1) <= 0) {
+			choosingWorkError.setText(choosingWorkError.getText() + "We are out of stock for " + Vehicle.getVehicleType()
+									+ " brakes. We apologize for the inconvenience\n");
+			check = false;
+		}
+		if (Service.getTiresService() == true && resultTires.getInt(1) <= 0) {
+			choosingWorkError.setText(choosingWorkError.getText() + "We are out of stock for " + Vehicle.getVehicleType()
+									  + " tires. We apologize for the inconvenience\n");
+			check = false;
+		}
+		if(check == true) {
+			
+			Order.calculateCost();
+			Parent root = FXMLLoader.load(getClass().getResource("CustomerInfo.fxml"));
+			stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+			scene = new Scene(root);
+			stage.setScene(scene);
+			stage.show();
+		}
+		
+	}
+	public void diagnosticCheck(ActionEvent event) throws IOException {
+		if(diagnosticSelect.isSelected()) {
+			Service.diagnosticSelectTrue();
+		}
+		else {
+			Service.diagnosticSelectFalse();
+		}
+	}
+	public void cleaningCheck(ActionEvent event) throws IOException {
+		if(cleaningSelect.isSelected()) {
+			Service.cleaningSelectTrue();
+		}
+		else {
+			Service.cleaningSelectFalse();
+		}
+	}
+	public void brakesCheck(ActionEvent event) throws IOException {
+		if(brakesSelect.isSelected()) {
+			Service.brakesSelectTrue();
+		}
+		else {
+			Service.brakesSelectFalse();
+		}
+	}
+	public void tiresCheck(ActionEvent event) throws IOException {
+		if(tiresSelect.isSelected()) {
+			Service.tiresSelectTrue();
+		}
+		else {
+			Service.tiresSelectFalse();
+		}
+	}
+	public void oilCheck(ActionEvent event) throws IOException {
+		if(oilSelect.isSelected()) {
+			Service.oilSelectTrue();
+		}
+		else {
+			Service.oilSelectFalse();
+		}
+	}
+	
+	//Customer page
+	public void customerBack(ActionEvent event) throws IOException {
+		Service.selectAllFalse();
+		Parent root = FXMLLoader.load(getClass().getResource("ChoosingWork.fxml"));
+		stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+		scene = new Scene(root);
+		stage.setScene(scene);
+		stage.show();
+	}
+	public void customerNext(ActionEvent event) throws IOException {
+		Customer.setName(nameText.getText());
+		Customer.setEmail(emailText.getText());
+		Customer.setAddress(addressText.getText());
+		Parent root = FXMLLoader.load(getClass().getResource("Booking.fxml"));
+		stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+		scene = new Scene(root);
+		stage.setScene(scene);
+		stage.show();
+	}
+	
+	//Booking page
+	public void bookingBack(ActionEvent event) throws IOException {
+		Parent root = FXMLLoader.load(getClass().getResource("CustomerInfo.fxml"));
+		stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+		scene = new Scene(root);
+		stage.setScene(scene);
+		stage.show();
+	}
+	public void bookingNext(ActionEvent event) throws IOException {
+		Parent root = FXMLLoader.load(getClass().getResource("Payment.fxml"));
+		stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+		scene = new Scene(root);
+		stage.setScene(scene);
+		stage.show();
+	}
+	public void bookingRefresh(ActionEvent event) throws IOException, SQLException {
+		Connection con = DriverManager.getConnection(url, user, pass);
+		Statement statement = con.createStatement();
+		ResultSet result = statement.executeQuery("SELECT * FROM datesandtimes WHERE Available = 1");
+		
+		List<MenuItem> itemList = new ArrayList<>();
+		
+		dateSelectionButton.getItems().clear();
+		
+		EventHandler<ActionEvent> settingTime = new EventHandler<ActionEvent>() {
+			public void handle(ActionEvent e) {
+				Booking.setDateAndTime(((MenuItem)e.getSource()).getText());
+			}
+		};
+		
+		int x = 0;
+		while (result.next()) {
+			
+			String data = "";
+			data = result.getString(1);
+			itemList.add(new MenuItem(data));
+			dateSelectionButton.getItems().add(itemList.get(x));
+			itemList.get(x).setOnAction(settingTime);
+			x++;
+		}
+		
+	}
+	
+	
+	//Payment page
+	public void paymentBack(ActionEvent event) throws IOException {
+		Parent root = FXMLLoader.load(getClass().getResource("Booking.fxml"));
+		stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+		scene = new Scene(root);
+		stage.setScene(scene);
+		stage.show();
+	}
+	public void paymentNext(ActionEvent event) throws IOException {
+		
+		Payment.setCcNum(Double.parseDouble(ccNumText.getText()));
+		Payment.setCcName(ccNameText.getText());
+		Payment.setCvv(Integer.parseInt(ccCVVText.getText()));
+		Payment.setCardType(ccTypeText.getText());
+		Payment.setExpiryDate(Integer.parseInt(ccExpiryDateText.getText()));
+		Payment.setBillingAddress(ccAddressText.getText());
+		
+		Parent root = FXMLLoader.load(getClass().getResource("Confirm.fxml"));
+		stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+		scene = new Scene(root);
+		stage.setScene(scene);
+		stage.show();
+	}
+	
+	//Confirmation Page
+	public void confirmBack(ActionEvent event) throws IOException {
+		Parent root = FXMLLoader.load(getClass().getResource("Payment.fxml"));
+		stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+		scene = new Scene(root);
+		stage.setScene(scene);
+		stage.show();
+	}
+	public void confirmNext(ActionEvent event) throws IOException, SQLException {
+
+		Connection con = DriverManager.getConnection(url, user, pass);
+		
+		Statement statementBrakes = con.createStatement();
+		Statement statementOil = con.createStatement();
+		Statement statementTires = con.createStatement();
+		ResultSet resultBrakes = statementBrakes.executeQuery("SELECT QUANTITY FROM inventory WHERE ITEM = '"
+														    + Vehicle.getVehicleType() + " Brakes';");
+		ResultSet resultOil = statementOil.executeQuery("SELECT QUANTITY FROM inventory WHERE ITEM = '"
+			    									    + Vehicle.getVehicleType() + " Oil';");
+		ResultSet resultTires = statementTires.executeQuery("SELECT QUANTITY FROM inventory WHERE ITEM = '"
+			    											+ Vehicle.getVehicleType() + " Tires';");
+		resultBrakes.next();
+		resultOil.next();
+		resultTires.next();
+		
+		boolean check = true;
+		confirmLabel.setText("");
+		
+		if (Service.getOilService() == true && resultOil.getInt(1) <= 0) {
+			confirmLabel.setText(confirmLabel.getText() + "We are out of stock for " + Vehicle.getVehicleType()
+									  + " oil. We apologize for the inconvenience\n");
+			check = false;
+		}
+		if(Service.getBrakesService() == true && resultBrakes.getInt(1) <= 0) {
+			confirmLabel.setText(confirmLabel.getText() + "We are out of stock for " + Vehicle.getVehicleType()
+									+ " brakes. We apologize for the inconvenience\n");
+			check = false;
+		}
+		if (Service.getTiresService() == true && resultTires.getInt(1) <= 0) {
+			confirmLabel.setText(confirmLabel.getText() + "We are out of stock for " + Vehicle.getVehicleType()
+									  + " tires. We apologize for the inconvenience\n");
+			check = false;
+		}
+		if(check == true) {
+			String invoiceQuery = ("INSERT INTO ordertest (`orderNum`, `oilService`, `brakeService`, `tireService`, `cleaningService`,"
+					 + " `diagnosticService`, `vehicle`, `name`, `email`, `address`, `bookingDate`, `ccName`, `ccNumber`, "
+					 + "`ccType`, `ccExpiryDate`, `ccCVV`, `ccBillingAddress`, `totalCost`) VALUES (NULL, '"
+					 + Service.getOilBoolean() + "', '" + Service.getBrakesBoolean() + "', '" + Service.getTiresBoolean()
+					 + "', '" + Service.getCleaningBoolean() + "', '" + Service.getDiagnosticBoolean() + "', '"
+					 + Vehicle.getVehicleType() + "', '" + Customer.getName() + "', '" + Customer.getEmail()
+					 + "', '" + Customer.getAddress() + "', '" + Booking.getDateAndTime() + "', '"
+					 + Payment.getCcName() + "', '" + Payment.getCcNum() + "', '" + Payment.getCardType() + "', '"
+					 + Payment.getExpiryDate() + "', '" + Payment.getCvv() + "', '" + Payment.getBillingAddress() + "', '"
+					 + Order.getCost() + "');");
+			String orderNumGet = ("SELECT MAX(orderNum) FROM ordertest");
+			PreparedStatement preparedStmt = con.prepareStatement(invoiceQuery);
+			preparedStmt.execute();
+			Statement statement = con.createStatement();
+			ResultSet result = statement.executeQuery(orderNumGet);
+			result.next();
+			String dateSetQuery = "UPDATE datesandtimes SET Available = 0 WHERE DateTime = '" + Booking.getDateAndTime() + "';";
+			PreparedStatement dateSet = con.prepareStatement(dateSetQuery);
+			dateSet.execute();
+			Order.setOrderNum(result.getInt(1));
+			
+			PreparedStatement oilUpdate = con.prepareStatement("UPDATE `inventory` SET `QUANTITY` = QUANTITY-1 "
+					+ "WHERE `inventory`.`ITEM` = '" + Vehicle.getVehicleType() + " Oil';");
+			PreparedStatement brakesUpdate = con.prepareStatement("UPDATE `inventory` SET `QUANTITY` = QUANTITY-1 "
+					+ "WHERE `inventory`.`ITEM` = '" + Vehicle.getVehicleType() + " Brakes';");
+			PreparedStatement tiresUpdate = con.prepareStatement("UPDATE `inventory` SET `QUANTITY` = QUANTITY-1 "
+					+ "WHERE `inventory`.`ITEM` = '" + Vehicle.getVehicleType() + " Tires';");
+			oilUpdate.execute();
+			brakesUpdate.execute();
+			tiresUpdate.execute();
+			
+			Parent root = FXMLLoader.load(getClass().getResource("Invoice.fxml"));
+			stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+			scene = new Scene(root);
+			stage.setScene(scene);
+			stage.show();
+		}
+		
+	}
+	public void confirmRefresh(ActionEvent event) throws IOException {
+		orderText.setText(Service.getAllService() + "Car Type: " + Vehicle.getVehicleType() + Customer.getAllCustomer() + 
+			              "\nBooking Date and Time: " + Booking.getDateAndTime() + Payment.getAllPayment() +
+			              "\nTotal Cost: $" + Order.getCost());
+	}
+	
+	///Invoice Page
+	public void invoiceRefresh(ActionEvent event) throws IOException {
+		invoiceText.setText("Your order number is: " + Integer.toString(Order.getOrderNum())
+		+ "\nRecepient: " + Customer.getName() + "\nEmail address: " + Customer.getEmail()
+		+ "\nServices ordered:\n\n" + Service.getAllService() + "\nCost: $" + Order.getCost()
+		+ "\nAppointment Date and Time: " + Booking.getDateAndTime());
+	}
+	
+	
+	//Check Order Page
+	public void checkOrderStatus(ActionEvent event) throws IOException, SQLException {
+		String submitNum = checkOrderNumText.getText();
+		String submitEmail = checkOrderEmailText.getText();
+		
+		Connection con = DriverManager.getConnection(url, user, pass);
+		Statement statement = con.createStatement();
+		ResultSet result = statement.executeQuery("SELECT * FROM ordertest WHERE " + submitNum + " = orderNum AND '"
+				                                  + submitEmail + "' = email");
+		result.next();
+		
+		exText.setText("Order Number: " + result.getString(1) + "\nOil Service: " + result.getString(2)
+		 + "\nBrakes Service: " + result.getString(3) + "\nTires Service: " + result.getString(4) + "\nCleaning Service: "
+		 + result.getString(5) + "\nDiagnostic Service: " + result.getString(6) + "\nVehicle: " + result.getString(7) + 
+		 "\nName: " + result.getString(8) + "\nEmail: " + result.getString(9) + "\nAddress: " + result.getString(10) + 
+		 "\nBooking Date: " + result.getString(11) + "\nCredit Card Name: " + result.getString(12) + "\nCredit Card Number: "
+		 + result.getString(13) + "\nCredit Card Type: " + result.getString(14) + "\nCredit Card Expiry Date: "
+		 + result.getString(15) + "\nCredit Card CVV: " + result.getString(16) + "\nBilling Address: " + result.getString(17)
+		 + "\nTotal Cost: " + result.getString(18));
+		
+	}
+	
+}
